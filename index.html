@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bug Bash!</title>
+<style>
+  body {
+    font-family: 'Courier New', monospace;
+    background-color: #111;
+    color: #8f8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  h1 {
+    font-size: 2em;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+  }
+
+  #score, #timer {
+    font-size: 1.2em;
+    margin: 5px;
+  }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .hole {
+    width: 100px;
+    height: 100px;
+    border: 2px solid #8f8;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .bug, .bomb {
+    font-size: 2em;
+  }
+
+  .squashed {
+    font-size: 2em;
+    color: #4f4;
+  }
+
+  .exploded {
+    font-size: 2em;
+    color: #f44;
+  }
+
+  #gameOver {
+    margin-top: 20px;
+    font-size: 1.5em;
+    color: #f44;
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <div id="score">Score: 0</div>
+  <h1>BUG BASH!</h1>
+  <div id="timer">Time: 30</div>
+
+  <div id="grid"></div>
+  <div id="gameOver"></div>
+
+<script>
+  const grid = document.getElementById('grid');
+  const scoreDisplay = document.getElementById('score');
+  const timerDisplay = document.getElementById('timer');
+  const gameOverDisplay = document.getElementById('gameOver');
+  let score = 0;
+  let timeLeft = 30;
+  let gameActive = true;
+
+  // Create grid holes
+  for (let i = 0; i < 9; i++) {
+    const hole = document.createElement('div');
+    hole.classList.add('hole');
+    grid.appendChild(hole);
+  }
+
+  const holes = document.querySelectorAll('.hole');
+
+  function randomHole() {
+    const index = Math.floor(Math.random() * holes.length);
+    return holes[index];
+  }
+
+  function showItem() {
+    if (!gameActive) return;
+    const hole = randomHole();
+
+    // Randomly decide whether to show a bug or a bomb (80% bug, 20% bomb)
+    const isBomb = Math.random() < 0.2;
+
+    const item = document.createElement('div');
+    item.classList.add(isBomb ? 'bomb' : 'bug');
+    item.textContent = isBomb ? '\ud83d\udca3' : '\ud83d\udc1e'; // bomb or bug emoji
+
+    hole.appendChild(item);
+
+    item.addEventListener('click', () => {
+      if (isBomb) explodeBomb(item);
+      else squashBug(item);
+    });
+
+    // Remove after 1.5 seconds
+    setTimeout(() => {
+      if (hole.contains(item)) hole.removeChild(item);
+    }, 1500);
+  }
+
+  function squashBug(bug) {
+    if (!gameActive || bug.classList.contains('squashed')) return;
+    bug.textContent = '\ud83d\udca9'; // squashed symbol (poop emoji)
+    bug.classList.add('squashed');
+    score += 10;
+    scoreDisplay.textContent = `Score: ${score}`;
+    setTimeout(() => bug.parentElement.removeChild(bug), 500);
+  }
+
+  function explodeBomb(bomb) {
+    if (!gameActive || bomb.classList.contains('exploded')) return;
+    bomb.textContent = '\ud83d\udca5'; // explosion emoji
+    bomb.classList.add('exploded');
+    score = Math.max(0, score - 10);
+    scoreDisplay.textContent = `Score: ${score}`;
+    setTimeout(() => bomb.parentElement.removeChild(bomb), 500);
+  }
+
+  function startTimer() {
+    const countdown = setInterval(() => {
+      timeLeft--;
+      timerDisplay.textContent = `Time: ${timeLeft}`;
+      if (timeLeft <= 0) {
+        clearInterval(countdown);
+        gameActive = false;
+        gameOverDisplay.textContent = `Game Over! Final Score: ${score}`;
+        gameOverDisplay.style.display = 'block';
+      }
+    }, 1000);
+  }
+
+  function gameLoop() {
+    const interval = setInterval(() => {
+      if (!gameActive) {
+        clearInterval(interval);
+        return;
+      }
+      showItem();
+    }, Math.random() * 1000 + 700);
+  }
+
+  startTimer();
+  gameLoop();
+</script>
+</body>
+</html>
